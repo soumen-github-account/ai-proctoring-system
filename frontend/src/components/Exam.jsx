@@ -102,7 +102,14 @@ const Exam = () => {
 
       videoRef.current.srcObject = stream;
 
-      stream.getTracks().forEach(track => peer.addTrack(track, stream));
+      // stream.getTracks().forEach(track => peer.addTrack(track, stream));
+
+      // student side
+      stream.getTracks().forEach(track => {
+        peer.addTrack(track, stream);
+      });
+
+      console.log("🎥 LOCAL TRACKS:", stream.getTracks());
 
       peer.onicecandidate = e => {
         if (e.candidate) {
@@ -129,39 +136,56 @@ const Exam = () => {
     socket.onmessage = async (e) => {
       const data = JSON.parse(e.data);
 
+      // if (data.type === "request-offer") {
+      //   console.log("🔁 ADMIN REQUESTED RE-OFFER");
+
+      //   // destroy old peer
+      //   if (peerRef.current) {
+      //     peerRef.current.close();
+      //     peerRef.current = null;
+      //   }
+
+      //   // create new peer
+      //   const peer = new RTCPeerConnection({
+      //     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      //   });
+      //   peerRef.current = peer;
+
+      //   const stream = await navigator.mediaDevices.getUserMedia({
+      //     video: true,
+      //     audio: true,
+      //   });
+
+      //   videoRef.current.srcObject = stream;
+
+      //   stream.getTracks().forEach(track => peer.addTrack(track, stream));
+
+      //   peer.onicecandidate = e => {
+      //     if (e.candidate) {
+      //       socket.send(JSON.stringify({
+      //         type: "ice-candidate",
+      //         candidate: e.candidate,
+      //         studentId,
+      //       }));
+      //     }
+      //   };
+
+      //   const offer = await peer.createOffer();
+      //   await peer.setLocalDescription(offer);
+
+      //   socket.send(JSON.stringify({
+      //     type: "offer",
+      //     offer,
+      //     studentId,
+      //   }));
+
+      //   console.log("📤 RE-OFFER SENT");
+      // }
       if (data.type === "request-offer") {
         console.log("🔁 ADMIN REQUESTED RE-OFFER");
 
-        // destroy old peer
-        if (peerRef.current) {
-          peerRef.current.close();
-          peerRef.current = null;
-        }
-
-        // create new peer
-        const peer = new RTCPeerConnection({
-          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-        });
-        peerRef.current = peer;
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
-
-        videoRef.current.srcObject = stream;
-
-        stream.getTracks().forEach(track => peer.addTrack(track, stream));
-
-        peer.onicecandidate = e => {
-          if (e.candidate) {
-            socket.send(JSON.stringify({
-              type: "ice-candidate",
-              candidate: e.candidate,
-              studentId,
-            }));
-          }
-        };
+        const peer = peerRef.current;
+        if (!peer) return;
 
         const offer = await peer.createOffer();
         await peer.setLocalDescription(offer);
@@ -172,7 +196,7 @@ const Exam = () => {
           studentId,
         }));
 
-        console.log("📤 RE-OFFER SENT");
+        console.log("📤 RE-OFFER SENT (same tracks)");
       }
 
       if (data.type === "answer") {
@@ -186,6 +210,7 @@ const Exam = () => {
 
     return () => socket.close();
   }, []);
+
 
   return (
     <div className="h-screen flex flex-col">
