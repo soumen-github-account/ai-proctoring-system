@@ -22,19 +22,36 @@ class AIEngine:
         self.no_face_counter = 0
 
     def process_frame(self, frame):
+
         violations = []
+
         h, w, _ = frame.shape
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # MOBILE
+        # 📱 PHONE DETECTION
         results = model(frame, verbose=False)
+
         for r in results:
-            for cls, conf in zip(r.boxes.cls, r.boxes.conf):
-                if int(cls) == 67 and conf > 0.3:
+
+            if r.boxes is None:
+                continue
+
+            for box in r.boxes:
+
+                cls = int(box.cls.item())
+                conf = float(box.conf.item())
+
+                print("DETECTED:", cls, conf)
+
+                if cls == 67 and conf > 0.3:
+
+                    print("📱 PHONE DETECTED")
+
                     violations.append("MOBILE_PHONE_DETECTED")
 
-        # FACE
+        # 👤 FACE DETECTION
         res = self.face_detection.process(rgb)
+
         face_count = len(res.detections) if res.detections else 0
 
         if face_count == 0:
@@ -42,7 +59,7 @@ class AIEngine:
         else:
             self.no_face_counter = 0
 
-        if self.no_face_counter > 10:
+        if self.no_face_counter > 3:
             violations.append("NO_FACE_DETECTED")
 
         if face_count > 1:
