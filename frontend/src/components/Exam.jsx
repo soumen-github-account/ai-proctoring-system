@@ -16,7 +16,8 @@ const Exam = () => {
   const socketRef = useRef(null);
 
   const examId = 123;
-  const studentId = 45;
+  const user = JSON.parse(localStorage.getItem("user"));
+  const studentId = user.cId
 
   const goToQuestion = (id) => {
     const index = questions.findIndex((q) => q.id === id);

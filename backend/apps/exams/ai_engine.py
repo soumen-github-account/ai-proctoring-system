@@ -41,7 +41,7 @@ class AIEngine:
                 cls = int(box.cls.item())
                 conf = float(box.conf.item())
 
-                print("DETECTED:", cls, conf)
+                # print("DETECTED:", cls, conf)
 
                 if cls == 67 and conf > 0.3:
 

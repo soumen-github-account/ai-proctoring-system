@@ -29,7 +29,8 @@ class VideoProcessor:
 
             if track.kind == "video":
 
-                student_tracks[self.student_id] = relay.subscribe(track)
+                # student_tracks[self.student_id] = relay.subscribe(track)
+                student_tracks[self.student_id] = track
 
                 print("📡 STORED VIDEO FOR:", self.student_id)
                 
@@ -46,7 +47,8 @@ class VideoProcessor:
                     }
                 )
 
-                asyncio.create_task(self.process_video(track))
+                # asyncio.create_task(self.process_video(track))
+                asyncio.create_task(self.process_video(relay.subscribe(track)))
 
         await pc.setRemoteDescription(
             RTCSessionDescription(
@@ -87,13 +89,13 @@ class VideoProcessor:
 
             violations = self.ai.process_frame(img)
 
-            print("AI RESULT:", violations)
+            # print("AI RESULT:", violations)
 
             for v in violations:
 
                 print("🚨 VIOLATION:", v)
 
-                # 🔴 SEND TO ADMIN
+                # SEND TO ADMIN
                 await self.channel_layer.group_send(
                     f"exam_{self.exam_id}",
                     {

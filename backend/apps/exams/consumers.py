@@ -3,8 +3,10 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from .webrtc_handler import VideoProcessor, student_tracks
+from aiortc.contrib.media import MediaRelay
 
 LATEST_VIOLATIONS = {}
+relay = MediaRelay()
 
 class ProctoringConsumer(AsyncWebsocketConsumer):
 
@@ -24,6 +26,16 @@ class ProctoringConsumer(AsyncWebsocketConsumer):
 
         print(f"✅ {self.role} connected")
 
+        # IMPORTANT: send existing students to admin
+        if self.role == "admin":
+
+            for sid in student_tracks.keys():
+
+                await self.send(text_data=json.dumps({
+                    "type": "student-ready",
+                    "studentId": sid
+                }))
+
     async def receive(self, text_data):
 
         data = json.loads(text_data)
@@ -41,31 +53,7 @@ class ProctoringConsumer(AsyncWebsocketConsumer):
                 "answer": answer
             }))
 
-        if msg_type == "watch-student" and self.role == "admin":
-
-            student_id = str(data["studentId"])
-
-            if student_id not in student_tracks:
-                return
-
-            pc = RTCPeerConnection()
-
-            self.peers[student_id] = pc
-
-            pc.addTrack(student_tracks[student_id])
-
-            offer = await pc.createOffer()
-            await pc.setLocalDescription(offer)
-
-            await self.send(text_data=json.dumps({
-                "type": "offer",
-                "studentId": student_id,
-                "offer": {
-                    "sdp": pc.localDescription.sdp,
-                    "type": pc.localDescription.type
-                }
-            }))
-
+            
         if msg_type == "answer" and self.role == "admin":
 
             student_id = str(data["studentId"])
@@ -81,6 +69,53 @@ class ProctoringConsumer(AsyncWebsocketConsumer):
                     )
                 )
 
+        if msg_type == "watch-student" and self.role == "admin":
+
+            student_id = str(data["studentId"])
+
+            if student_id not in student_tracks:
+                print("❌ No track for", student_id)
+                return
+
+            # close old peer
+            if student_id in self.peers:
+                try:
+                    await self.peers[student_id].close()
+                except:
+                    pass
+
+            pc = RTCPeerConnection()
+
+            self.peers[student_id] = pc
+
+            print("🎥 SENDING TRACK TO ADMIN:", student_id)
+
+            @pc.on("icecandidate")
+            async def on_icecandidate(candidate):
+
+                if candidate:
+
+                    await self.send(text_data=json.dumps({
+                        "type": "ice-candidate",
+                        "studentId": student_id,
+                        "candidate": candidate
+                    }))
+
+            # pc.addTrack(student_tracks[student_id])
+
+            pc.addTrack(relay.subscribe(student_tracks[student_id]))
+
+            offer = await pc.createOffer()
+            await pc.setLocalDescription(offer)
+
+            await self.send(text_data=json.dumps({
+                "type": "offer",
+                "studentId": student_id,
+                "offer": {
+                    "sdp": pc.localDescription.sdp,
+                    "type": pc.localDescription.type
+                }
+            }))
     async def signal(self, event):
 
         data = event["message"]
@@ -98,3 +133,13 @@ class ProctoringConsumer(AsyncWebsocketConsumer):
             LATEST_VIOLATIONS[sid] = LATEST_VIOLATIONS[sid][-10:]
 
         await self.send(text_data=json.dumps(data))
+
+    async def disconnect(self, close_code):
+
+        for pc in self.peers.values():
+            try:
+                await pc.close()
+            except:
+                pass
+
+        self.peers.clear()
