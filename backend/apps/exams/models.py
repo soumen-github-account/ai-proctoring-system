@@ -26,7 +26,8 @@ class Question(me.Document):
 
 class Violation(me.EmbeddedDocument):
     type = me.StringField(required=True)
-    screenshot = me.StringField()
+    count = me.IntField(default=1)
+    screenshots = me.ListField(me.StringField())
     timestamp = me.DateTimeField(default=datetime.utcnow)
 
 class Attempt(me.EmbeddedDocument):

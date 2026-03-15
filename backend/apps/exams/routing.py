@@ -19,11 +19,11 @@ from .consumers import ProctoringConsumer
 
 websocket_urlpatterns = [
     re_path(
-        r"ws/proctoring/student/(?P<exam_id>\d+)/(?P<student_id>[\w-]+)/$",
+        r"ws/proctoring/student/(?P<exam_id>[\w-]+)/(?P<student_id>[\w-]+)/$",
         ProctoringConsumer.as_asgi(),
     ),
     re_path(
-        r"ws/proctoring/admin/(?P<exam_id>\d+)/$",
+        r"ws/proctoring/admin/(?P<exam_id>[\w-]+)/$",
         ProctoringConsumer.as_asgi(),
     ),
 ]

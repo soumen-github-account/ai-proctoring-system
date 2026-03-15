@@ -1,10 +1,18 @@
 
+import os
+import cv2
+from django.conf import settings
+import cloudinary.uploader
+
 import asyncio
 import time
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaRelay
 from channels.layers import get_channel_layer
 from .ai_engine import AIEngine
+
+from apps.exams.services import save_violation
+from asgiref.sync import sync_to_async
 
 relay = MediaRelay()
 student_tracks = {}
@@ -17,6 +25,8 @@ class VideoProcessor:
         self.student_id = str(student_id)
         self.ai = AIEngine()
         self.channel_layer = get_channel_layer()
+        self.last_violation_time = {}
+        print("🎯 VIDEO PROCESSOR CREATED:", exam_id, student_id)
 
     async def handle_offer(self, offer):
 
@@ -89,13 +99,43 @@ class VideoProcessor:
 
             violations = self.ai.process_frame(img)
 
-            # print("AI RESULT:", violations)
-
             for v in violations:
+
+                now = time.time()
+
+                if v in self.last_violation_time:
+                    if now - self.last_violation_time[v] < 5:
+                        continue
+
+                self.last_violation_time[v] = now
 
                 print("🚨 VIOLATION:", v)
 
-                # SEND TO ADMIN
+                # filename = f"{self.student_id}_{int(time.time())}.jpg"
+
+                # os.makedirs(os.path.join(settings.MEDIA_ROOT, "violations"), exist_ok=True)
+
+                # path = os.path.join(settings.MEDIA_ROOT, "violations", filename)
+
+                # cv2.imwrite(path, img)
+
+                # screenshot_path = f"violations/{filename}"
+                _, buffer = cv2.imencode(".jpg", img)
+
+                upload_result = cloudinary.uploader.upload(
+                    buffer.tobytes(),
+                    folder="ai_proctoring_violations"
+                )
+
+                screenshot_url = upload_result["secure_url"]
+
+                await sync_to_async(save_violation)(
+                    self.exam_id,
+                    self.student_id,
+                    v,
+                    screenshot_url
+                )
+
                 await self.channel_layer.group_send(
                     f"exam_{self.exam_id}",
                     {
@@ -104,7 +144,8 @@ class VideoProcessor:
                             "type": "violation",
                             "studentId": self.student_id,
                             "violation": v,
-                            "timestamp": time.time()
+                            "timestamp": time.time(),
+                            "image": screenshot_url
                         }
                     }
                 )

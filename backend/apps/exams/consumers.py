@@ -12,14 +12,15 @@ class ProctoringConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
 
-        self.exam_id = self.scope["url_route"]["kwargs"]["exam_id"]
+        self.exam_id = self.scope["url_route"]["kwargs"].get("exam_id")
         self.student_id = self.scope["url_route"]["kwargs"].get("student_id")
-
+        
         self.role = "student" if self.student_id else "admin"
 
         self.group_name = f"exam_{self.exam_id}"
 
         self.peers = {}
+        print("🎯 CONNECTED:", self.exam_id, self.student_id)
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()

@@ -15,6 +15,11 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 
+import cloudinary
+import cloudinary.uploader
+from django.conf import settings
+
+
 class CreateExam(APIView):
     def post(self, request):
         data = request.data
@@ -176,7 +181,89 @@ class GetFirstExam(APIView):
             "exam": ExamSerializer(exam).data
         })
 
+class AddViolation(APIView):
 
+    def post(self, request):
+
+        student_id = request.data.get("student")
+        exam_id = request.data.get("exam")
+        violation_type = request.data.get("type")
+        screenshot = request.data.get("screenshot")
+
+        try:
+
+            student = User.objects(id=student_id).first()
+            exam = Exam.objects(id=exam_id).first()
+
+            if not student or not exam:
+                return Response({
+                    "success": False,
+                    "message": "Student or Exam not found"
+                })
+
+            # find exam attempt
+            attempt = ExamAttempt.objects(student=student, exam=exam).first()
+
+            if not attempt:
+
+                attempt = ExamAttempt(
+                    student=student,
+                    exam=exam,
+                    started_at=datetime.utcnow(),
+                    violations=[]
+                )
+                attempt.save()
+
+            screenshot_url = None
+
+            # upload screenshot to cloudinary
+            if screenshot:
+
+                upload = cloudinary.uploader.upload(
+                    screenshot,
+                    folder="ai-proctoring/screenshots"
+                )
+
+                screenshot_url = upload.get("secure_url")
+
+            # find existing violation type
+            existing = None
+
+            for v in attempt.violations:
+                if v.type == violation_type:
+                    existing = v
+                    break
+
+            if existing:
+
+                existing.count += 1
+
+                if screenshot_url:
+                    existing.screenshots.append(screenshot_url)
+
+            else:
+
+                violation = Violation(
+                    type=violation_type,
+                    count=1,
+                    screenshots=[screenshot_url] if screenshot_url else []
+                )
+
+                attempt.violations.append(violation)
+
+            attempt.save()
+
+            return Response({
+                "success": True,
+                "message": "Violation recorded"
+            })
+
+        except Exception as e:
+
+            return Response({
+                "success": False,
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # def calculate_risk(total_violations):
 #     if total_violations >= 8:
@@ -187,114 +274,107 @@ class GetFirstExam(APIView):
 #         return "MEDIUM"
 #     return "LOW"
 
-def calculate_risk(count):
-    if count == 0:
-        return "LOW"
-    elif count <= 3:
-        return "MEDIUM"
-    else:
-        return "HIGH"
 
 
-class SubmitExamView(APIView):
+# class SubmitExamView(APIView):
 
-    def post(self, request):
-        try:
-            student_id = request.data.get("student")
-            exam_id = request.data.get("exam")
-            score = request.data.get("score")
-            violations_data = request.data.get("violations", [])
-            recording = request.data.get("recording", False)
+#     def post(self, request):
+#         try:
+#             student_id = request.data.get("student")
+#             exam_id = request.data.get("exam")
+#             score = request.data.get("score")
+#             violations_data = request.data.get("violations", [])
+#             recording = request.data.get("recording", False)
 
-            student = User.objects(id=ObjectId(student_id)).first()
-            exam = Exam.objects(id=ObjectId(exam_id)).first()
+#             student = User.objects(id=ObjectId(student_id)).first()
+#             exam = Exam.objects(id=ObjectId(exam_id)).first()
 
-            if not student or not exam:
-                return Response({"error": "Student or Exam not found"}, status=404)
+#             if not student or not exam:
+#                 return Response({"error": "Student or Exam not found"}, status=404)
 
-            violation_objects = []
+#             violation_objects = []
 
-            for v in violations_data:
-                violation_objects.append(
-                    Violation(
-                        type=v.get("type"),
-                        screenshot=v.get("screenshot"),
-                        timestamp=parser.parse(v.get("timestamp")) if v.get("timestamp") else datetime.utcnow()
-                    )
-                )
+#             for v in violations_data:
+#                 violation_objects.append(
+#                     Violation(
+#                         type=v.get("type"),
+#                         screenshot=v.get("screenshot"),
+#                         timestamp=parser.parse(v.get("timestamp")) if v.get("timestamp") else datetime.utcnow()
+#                     )
+#                 )
 
-            violation_count = len(violation_objects)
+#             violation_count = len(violation_objects)
 
-            attempt = Attempt(
-                status="Completed",
-                score=score,
-                violations_count=violation_count,
-                recording=recording,
-                risk=calculate_risk(violation_count)
-            )
+#             attempt = Attempt(
+#                 status="Completed",
+#                 score=score,
+#                 violations_count=violation_count,
+#                 recording=recording,
+#                 risk=calculate_risk(violation_count)
+#             )
 
-            exam_attempt = ExamAttempt(
-                student=student,
-                exam=exam,
-                attempt=attempt,
-                violations=violation_objects
-            )
+#             exam_attempt = ExamAttempt(
+#                 student=student,
+#                 exam=exam,
+#                 attempt=attempt,
+#                 violations=violation_objects
+#             )
 
-            exam_attempt.save()
+#             exam_attempt.save()
 
-            return Response({
-                "success": True,
-                "risk": attempt.risk,
-                "violations": violation_count
-            })
+#             return Response({
+#                 "success": True,
+#                 "risk": attempt.risk,
+#                 "violations": violation_count
+#             })
 
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=500)
+#         except Exception as e:
+#             return Response({"success": False, "error": str(e)}, status=500)
 
 
-class AddViolationView(APIView):
+# class AddViolationView(APIView):
 
-    def post(self, request):
-        try:
-            student_id = request.data.get("student")
-            exam_id = request.data.get("exam")
-            message = request.data.get("message")
-            screenshot = request.data.get("screenshot")
+#     def post(self, request):
+#         try:
+#             student_id = request.data.get("student")
+#             exam_id = request.data.get("exam")
+#             message = request.data.get("message")
+#             screenshot = request.data.get("screenshot")
 
-            if not student_id or not exam_id or not message:
-                return Response({"error": "Missing required fields"}, status=400)
+#             if not student_id or not exam_id or not message:
+#                 return Response({"error": "Missing required fields"}, status=400)
 
-            student = User.objects(id=ObjectId(student_id)).first()
-            exam = Exam.objects(id=ObjectId(exam_id)).first()
+#             student = User.objects(id=ObjectId(student_id)).first()
+#             exam = Exam.objects(id=ObjectId(exam_id)).first()
 
-            if not student or not exam:
-                return Response({"error": "Student or Exam not found"}, status=404)
+#             if not student or not exam:
+#                 return Response({"error": "Student or Exam not found"}, status=404)
 
-            attempt = ExamAttempt.objects(student=student, exam=exam).first()
+#             attempt = ExamAttempt.objects(student=student, exam=exam).first()
 
-            if not attempt:
-                return Response({"error": "Attempt not found"}, status=404)
+#             if not attempt:
+#                 return Response({"error": "Attempt not found"}, status=404)
 
-            violation = Violation(
-                type=message,
-                screenshot=screenshot,
-                timestamp=datetime.utcnow()
-            )
+#             violation = Violation(
+#                 type=message,
+#                 screenshot=screenshot,
+#                 timestamp=datetime.utcnow()
+#             )
 
-            attempt.violations.append(violation)
+#             attempt.violations.append(violation)
 
-            violation_count = len(attempt.violations)
+#             violation_count = len(attempt.violations)
 
-            attempt.attempt.violations_count = violation_count
-            attempt.attempt.risk = calculate_risk(violation_count)
+#             attempt.attempt.violations_count = violation_count
+#             attempt.attempt.risk = calculate_risk(violation_count)
 
-            attempt.save()
+#             attempt.save()
 
-            return Response({
-                "success": True,
-                "violations_count": violation_count,
-                "risk": attempt.attempt.risk
-            })
+#             return Response({
+#                 "success": True,
+#                 "violations_count": violation_count,
+#                 "risk": attempt.attempt.risk
+#             })
 
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=500)

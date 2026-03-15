@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react'
 import image from '../assets/loginSide.jpg'
-import AppContext from '../contexts/AppContext';
+import {AppContext} from '../contexts/AppContext';
 
 const Login = () => {
     const { login, loadingUser } = useContext(AppContext);

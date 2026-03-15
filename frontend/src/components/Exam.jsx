@@ -4,10 +4,12 @@ import Navbar from "./Navbar";
 import QuestionPanel from "./QuestionPanel";
 import RightSidebar from "./RightSidebar";
 import { examData } from "../assets/data";
-import AppContext from "../contexts/AppContext";
+import {AppContext} from "../contexts/AppContext";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const Exam = () => {
-  const { questions, setQuestions } = useContext(AppContext);
+  const { questions, setQuestions, exam, backendUrl } = useContext(AppContext);
   // const [questions, setQuestions] = useState(examData.questions);
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentQuestion = questions[currentIndex];
@@ -15,9 +17,13 @@ const Exam = () => {
   const peerRef = useRef(null);
   const socketRef = useRef(null);
 
-  const examId = 123;
+  const examId = exam?.id;
   const user = JSON.parse(localStorage.getItem("user"));
   const studentId = user.cId
+
+  const [screenStream, setScreenStream] = useState(null);
+
+  const violationsRef = useRef([]);
 
   const goToQuestion = (id) => {
     const index = questions.findIndex((q) => q.id === id);
@@ -79,6 +85,8 @@ const Exam = () => {
   }, [questions]);
 
   useEffect(() => {
+    if (!exam?.id || !studentId) return;
+
     const socket = new WebSocket(
       `ws://localhost:8000/ws/proctoring/student/${examId}/${studentId}/`,
     );
@@ -151,7 +159,182 @@ const Exam = () => {
       socket.close();
       peerRef.current?.close();
     };
+  }, [exam]);
+
+
+    // ================= SCREENSHOT =================
+  const captureScreenshot = async () => {
+
+    if (!screenStream) return null;
+
+    const video = document.createElement("video");
+    video.srcObject = screenStream;
+
+    await video.play();
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+
+    return canvas.toDataURL("image/jpeg", 0.7);
+  };
+
+  // ================= SEND VIOLATION =================
+  const sendViolation = async (type) => {
+
+    if (!exam?.id || !user?.id) return;
+
+    const screenshot = await captureScreenshot();
+
+    const violation = {
+      type,
+      screenshot,
+      timestamp: new Date().toISOString()
+    };
+
+    violationsRef.current.push(violation);
+
+    try {
+
+      await axios.post(`${backendUrl}/api/exams/add-violation/`, {
+        student: user.id,
+        exam: exam.id,
+        type,
+        screenshot
+      });
+      console.log("🚨 VIOLATION SENT:", type);
+
+    } catch (err) {
+
+      console.log("Violation send failed");
+
+    }
+  };
+
+  // ================= BLOCK COPY/PASTE =================
+  useEffect(() => {
+
+    const block = async (e) => {
+
+      e.preventDefault();
+
+      toast.error("Copy/Paste not allowed");
+
+      await sendViolation("COPY_ATTEMPT");
+
+    };
+
+    document.addEventListener("copy", block);
+    document.addEventListener("paste", block);
+    document.addEventListener("cut", block);
+
+    return () => {
+
+      document.removeEventListener("copy", block);
+      document.removeEventListener("paste", block);
+      document.removeEventListener("cut", block);
+
+    };
+
+  }, [exam, user, screenStream]);
+
+  // ================= BLOCK DEVTOOLS =================
+  useEffect(() => {
+
+    const handleKey = (e) => {
+
+      if (
+        e.ctrlKey &&
+        ["c", "v", "x", "a", "u"].includes(e.key.toLowerCase())
+      ) {
+        e.preventDefault();
+      }
+
+      if (e.key === "F12") e.preventDefault();
+
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i") {
+        e.preventDefault();
+      }
+
+    };
+
+    document.addEventListener("keydown", handleKey);
+
+    return () => document.removeEventListener("keydown", handleKey);
+
   }, []);
+
+  // ================= SCREEN SHARE =================
+  useEffect(() => {
+
+  const startScreenShare = async () => {
+
+    try {
+
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true
+      });
+
+      setScreenStream(stream);
+
+      toast.success("Screen sharing started");
+
+      stream.getVideoTracks()[0].addEventListener("ended", async () => {
+
+        await sendViolation("SCREEN_SHARE_STOPPED");
+
+        toast.error("Screen sharing stopped. Exam will be submitted.");
+
+        // optional: auto submit exam
+        // submitExam();
+
+      });
+
+    } catch (err) {
+
+      console.log("❌ Screen share denied");
+
+      await sendViolation("SCREEN_SHARE_DENIED");
+
+      toast.error("Screen sharing is required for the exam");
+
+      // redirect student
+      window.location.href = "/";
+
+    }
+
+  };
+
+  startScreenShare();
+
+}, []);
+
+  // ================= TAB SWITCH DETECTION =================
+  useEffect(() => {
+
+    const handleVisibility = async () => {
+
+      if (document.hidden) {
+        await sendViolation("TAB_SWITCHED");
+      }
+
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleVisibility);
+
+    return () => {
+
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleVisibility);
+
+    };
+
+  }, [exam, user, screenStream]);
+
 
   return (
     <div className="h-screen flex flex-col">

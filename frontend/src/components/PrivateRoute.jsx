@@ -1,6 +1,6 @@
 
 import React, { Children, useContext } from 'react'
-import AppContext from '../contexts/AppContext'
+import {AppContext} from '../contexts/AppContext'
 import { Navigate } from 'react-router-dom';
 
 const PrivateRoute = ({children}) => {

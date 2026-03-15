@@ -13,10 +13,20 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from mongoengine import connect
 from pathlib import Path
+import cloudinary
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+cloudinary.config(
+    cloud_name = os.getenv("CLOUD_NAME"),
+    api_key = os.getenv("CLOUD_API_KEY"),
+    api_secret = os.getenv("CLOUD_API_SECRET"),
+    secure = True
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/

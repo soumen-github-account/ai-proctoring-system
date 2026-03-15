@@ -101,7 +101,7 @@
 
 import { useContext, useEffect, useState, useRef } from "react";
 import { examInstructions } from "../assets/data";
-import AppContext from "../contexts/AppContext";
+import {AppContext} from "../contexts/AppContext";
 
 const RightSidebar = () => {
   const { exam } = useContext(AppContext);

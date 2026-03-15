@@ -12,7 +12,7 @@ const LiveMonitoring = () => {
   const videoRefs = useRef({});
   const streams = useRef({});
 
-  const examId = 123;
+  const examId = "699145092d5dd8d82d370a05";
 
   useEffect(() => {
     const socket = new WebSocket(
