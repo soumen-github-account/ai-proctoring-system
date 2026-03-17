@@ -281,6 +281,8 @@ export const AppContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [exam, setExam] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [submitLoading, setSubmitLoading] = useState(false)
+
 
   const navigate = useNavigate();
 
@@ -423,7 +425,7 @@ export const AppContextProvider = ({ children }) => {
 
   // ================= SUBMIT EXAM =================
   const submitExam = async () => {
-
+    setSubmitLoading(true)
     if (!exam?.id || !user?.id) return;
 
     const score = questions.reduce(
@@ -434,21 +436,20 @@ export const AppContextProvider = ({ children }) => {
     const payload = {
       student: user.id,
       exam: exam.id,
-      score,
-      violations: violationsRef.current,
-      recording: true
+      score
     };
 
     try {
-
-      await axios.post(`${backendUrl}/api/exams/submit-exam/`, payload);
-
-      toast.success("Exam submitted successfully");
-
+      const {data} = await axios.post(`${backendUrl}/api/exams/submit-exam/`, payload);
+      if(data.success){
+        setSubmitLoading(false);
+        toast.success(data.message)
+      } else{
+        toast.error(data.message)
+      }
     } catch (error) {
-
       console.log(error);
-
+      setSubmitLoading(false)
     }
   };
 
@@ -461,7 +462,8 @@ export const AppContextProvider = ({ children }) => {
     questions,
     setQuestions,
     submitExam,
-    backendUrl
+    backendUrl,
+    submitLoading, setSubmitLoading
   };
 
   return (

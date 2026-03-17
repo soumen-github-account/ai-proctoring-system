@@ -25,6 +25,12 @@ const Exam = () => {
 
   const violationsRef = useRef([]);
 
+  const [cameraReady, setCameraReady] = useState(false);
+  const [screenReady, setScreenReady] = useState(false);
+  const [socketReady, setSocketReady] = useState(false);
+
+  const examReady = cameraReady && screenReady && socketReady
+
   const goToQuestion = (id) => {
     const index = questions.findIndex((q) => q.id === id);
     setCurrentIndex(index);
@@ -95,6 +101,7 @@ const Exam = () => {
 
     socket.onopen = async () => {
       console.log("✅ STUDENT SOCKET CONNECTED");
+      setSocketReady(true);
 
       const peer = new RTCPeerConnection({
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -108,6 +115,7 @@ const Exam = () => {
       });
 
       videoRef.current.srcObject = stream;
+      setCameraReady(true);
 
       stream.getTracks().forEach((track) => {
         peer.addTrack(track, stream);
@@ -268,29 +276,92 @@ const Exam = () => {
   }, []);
 
   // ================= SCREEN SHARE =================
-  useEffect(() => {
+//   useEffect(() => {
+
+//   const startScreenShare = async () => {
+
+//     try {
+
+//       const stream = await navigator.mediaDevices.getDisplayMedia({
+//         video: true
+//       });
+
+//       setScreenStream(stream);
+
+//       toast.success("Screen sharing started");
+
+//       stream.getVideoTracks()[0].addEventListener("ended", async () => {
+
+//         await sendViolation("SCREEN_SHARE_STOPPED");
+
+//         toast.error("Screen sharing stopped. Exam will be submitted.");
+
+//         // optional: auto submit exam
+//         // submitExam();
+
+//       });
+
+//     } catch (err) {
+
+//       console.log("❌ Screen share denied");
+
+//       await sendViolation("SCREEN_SHARE_DENIED");
+
+//       toast.error("Screen sharing is required for the exam");
+
+//       // redirect student
+//       window.location.href = "/";
+
+//     }
+
+//   };
+
+//   startScreenShare();
+
+// }, []);
+
+  // ================= SCREEN SHARE =================
+useEffect(() => {
 
   const startScreenShare = async () => {
 
     try {
 
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true
+        video: true,
+        audio: false
       });
 
+      const track = stream.getVideoTracks()[0];
+      const settings = track.getSettings();
+
+      // settings.displaySurface can be: "monitor" | "window" | "browser"
+      if (settings.displaySurface !== "monitor") {
+
+        toast.error("❌ Please share your entire screen (Entire Screen), not a tab/window.");
+
+        // stop stream
+        stream.getTracks().forEach(t => t.stop());
+
+        await sendViolation("SCREEN_SHARE_NOT_MONITOR");
+
+        // redirect / block exam
+        window.location.href = "/";
+        return;
+      }
+
+      // OK → Entire screen shared
       setScreenStream(stream);
+      setScreenReady(true);
+      toast.success("Entire screen sharing started");
 
-      toast.success("Screen sharing started");
-
-      stream.getVideoTracks()[0].addEventListener("ended", async () => {
+      track.addEventListener("ended", async () => {
 
         await sendViolation("SCREEN_SHARE_STOPPED");
 
         toast.error("Screen sharing stopped. Exam will be submitted.");
 
-        // optional: auto submit exam
-        // submitExam();
-
+        // optional: submitExam();
       });
 
     } catch (err) {
@@ -301,11 +372,8 @@ const Exam = () => {
 
       toast.error("Screen sharing is required for the exam");
 
-      // redirect student
       window.location.href = "/";
-
     }
-
   };
 
   startScreenShare();
@@ -335,6 +403,37 @@ const Exam = () => {
 
   }, [exam, user, screenStream]);
 
+useEffect(() => {
+
+  if (!exam.id || !user.id || !examReady) {
+    console.log("Waiting for proctoring setup...");
+    return;
+  }
+
+  const startAttempt = async () => {
+
+    try {
+
+      console.log("🚀 Calling start-exam API");
+
+      await axios.post(`${backendUrl}/api/exams/start-exam/`, {
+        student: user.id,
+        exam: exam.id
+      });
+
+      console.log("✅ Exam attempt created");
+
+    } catch (err) {
+
+      console.log("Attempt start error:", err);
+
+    }
+
+  };
+
+  startAttempt();
+
+}, [exam?.id, user?.id, examReady]);
 
   return (
     <div className="h-screen flex flex-col">

@@ -18,37 +18,40 @@ const StatCard = ({ title, value, icon, gradient }) => (
 
 
 import { Users, ClipboardList, Flag, AlertTriangle } from "lucide-react";
+import { useContext } from "react";
+import { AppContext } from "../contexts/AppContext";
 
 const StateSection = () => {
+  const {totalCandidate, highRiskedCandidate, activeExams, flaggedCandidate} = useContext(AppContext)
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <StatCard
-            title="Total Candidates"
-            value="120"
-            icon={<Users size={28} className="text-indigo-600" />}
-            gradient="bg-gradient-to-r from-blue-300 to-indigo-50"
-        />
-        <StatCard
-            title="Active Exams"
-            value="5"
-            icon={<ClipboardList size={28} className="text-emerald-600" />}
-            gradient="bg-gradient-to-r from-green-300 to-emerald-50"
-        />
-        <StatCard
-            title="Flagged Candidates"
-            value="12"
-            icon={<Flag size={28} className="text-rose-600" />}
-            gradient="bg-gradient-to-r from-red-300 to-rose-50"
-        />
-        <StatCard
-            title="High-Risk Candidates"
-            value="7"
-            icon={<AlertTriangle size={28} className="text-orange-600" />}
-            gradient="bg-gradient-to-r from-orange-300 to-orange-50"
-        />
-        </div>
-    )
+  return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <StatCard
+          title="Total Candidates"
+          value={totalCandidate}
+          icon={<Users size={28} className="text-indigo-600" />}
+          gradient="bg-gradient-to-r from-blue-300 to-indigo-50"
+      />
+      <StatCard
+          title="Active Exams"
+          value={activeExams}
+          icon={<ClipboardList size={28} className="text-emerald-600" />}
+          gradient="bg-gradient-to-r from-green-300 to-emerald-50"
+      />
+      <StatCard
+          title="Flagged Candidates"
+          value={flaggedCandidate}
+          icon={<Flag size={28} className="text-rose-600" />}
+          gradient="bg-gradient-to-r from-red-300 to-rose-50"
+      />
+      <StatCard
+          title="High-Risk Candidates"
+          value={highRiskedCandidate}
+          icon={<AlertTriangle size={28} className="text-orange-600" />}
+          gradient="bg-gradient-to-r from-orange-300 to-orange-50"
+      />
+      </div>
+  )
 }
 
 export default StateSection

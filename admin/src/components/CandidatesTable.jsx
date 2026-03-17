@@ -1,5 +1,9 @@
-
-import { Eye, CircleStop } from 'lucide-react';
+import axios from "axios";
+import { Eye, CircleStop, Loader } from "lucide-react";
+import { useContext, useEffect, useState } from "react";
+import { MdAccountCircle } from "react-icons/md";
+import { AppContext } from "../contexts/AppContext";
+import {toast} from 'react-hot-toast'
 
 const riskBadge = {
   HIGH: "bg-red-100 text-red-700",
@@ -7,77 +11,115 @@ const riskBadge = {
   LOW: "bg-green-100 text-green-700",
 };
 
+const CandidatesTable = ({ data, setSelectedCandidate }) => {
+  const {backendUrl, fetchCandidates} = useContext(AppContext)
+  const [loading, setLoading] = useState(false)
 
-const CandidatesTable = ({ data }) => (
-  <div className="bg-white rounded-xl shadow-sm border-1 border-gray-300 overflow-hidden">
-    <table className="w-full text-sm">
-      <thead className="bg-gray-50 text-gray-600">
-        <tr>
-          <th className="p-4 text-left"><input type="checkbox" /></th>
-          <th className="p-4 text-left">Name</th>
-          <th className="p-4">Risk Level</th>
-          <th className="p-4">Violations</th>
-          <th className="p-4">Trust Score</th>
-          <th className="p-4">Actions</th>
-        </tr>
-      </thead>
+  const handleTerminate = async(studentId, examId, terminate) =>{
+    setLoading(true)
+    try {
+      const paylode = {
+        "student_id":studentId,
+        "exam_id": examId,
+        "terminate": terminate
+      }
+      const {data} = await axios.post(`${backendUrl}/api/exams/action-terminate/`, paylode);
+      if(data.success){
+        fetchCandidates();
+        setLoading(false);
+        toast.success(data.message)
+      }
+    } catch (err) {
+      console.log(err)
+      setLoading(false)
+    }
+  }
 
-      <tbody>
-        {data.map((c, i) => (
-          <tr key={i} className="border-t-1 border-t-gray-300 hover:bg-gray-50">
-            <td className="p-4"><input type="checkbox" /></td>
+  useEffect(()=>{
+    fetchCandidates()
+  }, [])
+  
+  return (
+    <div className="bg-white rounded-xl shadow border border-gray-200">
+      
+      {/* Scroll Container */}
+      <div className="max-h-[400px] overflow-y-auto">
+        <table className="w-full text-sm text-gray-700">
 
-            <td className="p-4 flex items-center gap-3">
-              <img
-                src={c.image}
-                className="w-9 h-9 rounded-full object-cover"
-              />
-              <span className="font-medium">{c.name}</span>
-            </td>
+          {/* Header */}
+          <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
+            <tr>
+              <th className="px-6 py-3 text-left">Candidate</th>
+              <th className="px-6 py-3 text-center">Risk Level</th>
+              <th className="px-6 py-3 text-center">Violations</th>
+              <th className="px-6 py-3 text-center">Trust Score</th>
+              <th className="px-6 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
 
-            {/* <td className="p-4">{c.exam}</td> */}
+          {/* Body */}
+          <tbody className="divide-y divide-gray-200">
+            {data.map((c, i) => (
+              <tr key={i} className="hover:bg-gray-50">
 
-            <td className="p-4">
-              <span className={`
-                px-3 py-1 rounded-full text-xs font-semibold
-                ${riskBadge[c.risk]}
-              `}>
-                {c.risk}
-              </span>
-            </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <MdAccountCircle className="w-9 h-9 text-gray-500" />
+                    <span className="font-medium">{c.student.name}</span>
+                  </div>
+                </td>
 
-            <td className="p-4 text-gray-600">{c.violations}</td>
+                <td className="px-6 py-4 text-center">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${riskBadge[c.risk]}`}
+                  >
+                    {c.risk}
+                  </span>
+                </td>
 
-            <td className="p-4 font-semibold">{c.trust}</td>
+                <td className="px-6 py-4 text-center">
+                  {c.violations_count}
+                </td>
 
-            <td className="p-4 flex gap-2">
-              <button className="px-3 py-1 rounded-md bg-blue-500 text-white flex items-center gap-2">
-                <Eye size={14} />
-                <p>View</p>
-              </button>
-              {c.risk === "HIGH" && (
-                <button className="px-3 py-1 rounded-md bg-rose-600 text-white flex items-center gap-2">
-                    <CircleStop size={14} />
-                  <p>Terminate</p>
-                </button>
-              )}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+                <td className="px-6 py-4 text-center font-semibold">
+                  {c.risk_score}
+                </td>
 
-    {/* Pagination */}
-    <div className="p-4 flex justify-between text-sm text-gray-600">
-      <span>Showing 1–8 of 120 entries</span>
-      <div className="flex gap-2">
-        <button className="px-3 py-1 border rounded">Previous</button>
-        <button className="px-3 py-1 bg-blue-600 text-white rounded">1</button>
-        <button className="px-3 py-1 border rounded">2</button>
-        <button className="px-3 py-1 border rounded">Next</button>
+                <td className="px-6 py-4">
+                  <div className="flex justify-center gap-2">
+                    <button onClick={() => setSelectedCandidate(c)} className="flex items-center gap-1 px-3 py-1 bg-blue-500 text-white rounded-md text-xs">
+                      <Eye size={14} />
+                      View
+                    </button>
+
+                    {c.risk === "HIGH" && (
+                        loading ? 
+                          <span className="px-3 py-1 bg-rose-600 rounded-md">
+                            <Loader className="animate-spin duration-300 transition-all text-white"/>
+                          </span>
+                        :
+                        c.isTerminate ?
+                          <button onClick={()=>handleTerminate(c.student.id, c.exam_id, false)} className="flex items-center gap-1 px-3 py-1 text-rose-600 border-2 border-rose-600 rounded-md text-xs cursor-pointer">
+                            Terminated
+                          </button>
+                        :
+                          <button onClick={()=>handleTerminate(c.student.id, c.exam_id, true)} className="flex items-center gap-1 px-3 py-1 bg-rose-600 text-white rounded-md text-xs">
+                            <CircleStop size={14} />
+                            Terminate
+                          </button>
+                    )}
+                  </div>
+                </td>
+
+              </tr>
+            ))}
+          </tbody>
+
+        </table>
       </div>
-    </div>
-  </div>
-);
 
-export default CandidatesTable
+    </div>
+  );
+};
+
+export default CandidatesTable;

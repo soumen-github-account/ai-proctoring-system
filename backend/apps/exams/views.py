@@ -253,9 +253,23 @@ class AddViolation(APIView):
 
             attempt.save()
 
+            # calculate updated risk
+            violations = attempt.violations or []
+            risk_score, violations_count, risk = calculate_risk(violations)
+
+            if not attempt.attempt:
+                attempt.attempt = Attempt()
+
+            attempt.attempt.risk_score = risk_score
+            attempt.attempt.violations_count = violations_count
+            attempt.attempt.risk = risk
+
+            attempt.save()
+
             return Response({
                 "success": True,
-                "message": "Violation recorded"
+                "risk_score": risk_score,
+                "risk": risk
             })
 
         except Exception as e:
@@ -265,116 +279,237 @@ class AddViolation(APIView):
                 "message": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# def calculate_risk(total_violations):
-#     if total_violations >= 8:
-#         return "CRITICAL"
-#     elif total_violations >= 5:
-#         return "HIGH"
-#     elif total_violations >= 2:
-#         return "MEDIUM"
-#     return "LOW"
+
+def calculate_risk(violations):
+    weights = {
+        "NO_FACE_DETECTED": 3,
+        "TAB_SWITCHED": 5,
+        "SCREEN_SHARE_STOPPED": 10,
+        "COPY_ATTEMPT": 2,
+        "PHONE_DETECTED": 8
+    }
+
+    total_score = 0
+    total_count = 0
+
+    for v in violations:
+        weight = weights.get(v.type, 1)
+
+        total_score += weight * v.count
+        total_count += v.count
+
+    if total_score < 20:
+        risk = "LOW"
+    elif total_score < 50:
+        risk = "MEDIUM"
+    else:
+        risk = "HIGH"
+    
+    return total_score, total_count, risk
+
+class StartExam(APIView):
+    def post(self, request):
+
+        student_id = request.data.get("student")
+        exam_id = request.data.get("exam")
+
+        student = User.objects.get(id=student_id)
+        exam = Exam.objects.get(id=exam_id)
+
+        existing = ExamAttempt.objects(
+            student=student,
+            exam=exam
+        ).first()
+ 
+        if existing:
+            if not existing.attempt:
+                existing.attempt = Attempt()
+
+            violations = existing.violations or []
+            risk_score, violations_count, risk = calculate_risk(violations)
+            existing.attempt.risk_score = risk_score
+            existing.attempt.violations_count = violations_count
+            existing.attempt.risk = risk
+
+            existing.save()
+
+            return Response({"success": True})
+            
+        attempt = Attempt()
+
+        exam_attempt = ExamAttempt(
+            student=student,
+            exam=exam,
+            attempt=attempt
+        )
+
+        exam_attempt.save()
+
+        return Response({"success":True, "attempt_id": str(exam_attempt.id)})
 
 
+class GetExamAttempts(APIView):
+    def get(self, request, exam_id):
 
-# class SubmitExamView(APIView):
+        attempts = ExamAttempt.objects(exam=exam_id)
 
-#     def post(self, request):
-#         try:
-#             student_id = request.data.get("student")
-#             exam_id = request.data.get("exam")
-#             score = request.data.get("score")
-#             violations_data = request.data.get("violations", [])
-#             recording = request.data.get("recording", False)
+        data = []
 
-#             student = User.objects(id=ObjectId(student_id)).first()
-#             exam = Exam.objects(id=ObjectId(exam_id)).first()
+        for a in attempts:
+            violations_list = []
 
-#             if not student or not exam:
-#                 return Response({"error": "Student or Exam not found"}, status=404)
+            for v in a.violations:
+                violations_list.append({
+                    "type": v.type,
+                    "count": v.count,
+                    "screenShots": v.screenshots,
+                    "timestamp": v.timestamp
+                })
 
-#             violation_objects = []
+            data.append({
+                "attempt_id": str(a.id),
+                "student":{
+                    "id": str(a.student.id),
+                    "cId": a.student.cId,
+                    "name": a.student.name,
+                    "email": a.student.email
+                },
 
-#             for v in violations_data:
-#                 violation_objects.append(
-#                     Violation(
-#                         type=v.get("type"),
-#                         screenshot=v.get("screenshot"),
-#                         timestamp=parser.parse(v.get("timestamp")) if v.get("timestamp") else datetime.utcnow()
-#                     )
-#                 )
+                "exam_id": str(a.exam.id),
+                "exam_name": a.exam.name,
+                "subject": a.exam.subject,
+                "score": a.attempt.score,
+                "risk_score": a.attempt.risk_score if a.attempt else 0,
+                "risk": a.attempt.risk if a.attempt else "LOW",
+                "isTerminate": a.attempt.isTerminated,
+                "violations_count": a.attempt.violations_count if a.attempt else 0,
+                "status": a.attempt.status if a.attempt else "Not Started",
+                "violations": violations_list,
 
-#             violation_count = len(violation_objects)
+                "created_at": a.created_at
+            })
+        
+        return Response({
+            "success": True,
+            "attempts": data
+        })
+    
 
-#             attempt = Attempt(
-#                 status="Completed",
-#                 score=score,
-#                 violations_count=violation_count,
-#                 recording=recording,
-#                 risk=calculate_risk(violation_count)
-#             )
+class SubmitExam(APIView):
 
-#             exam_attempt = ExamAttempt(
-#                 student=student,
-#                 exam=exam,
-#                 attempt=attempt,
-#                 violations=violation_objects
-#             )
+    def post(self, request):
 
-#             exam_attempt.save()
+        student_id = request.data.get("student")
+        exam_id = request.data.get("exam")
+        score = request.data.get("score")
 
-#             return Response({
-#                 "success": True,
-#                 "risk": attempt.risk,
-#                 "violations": violation_count
-#             })
+        try:
 
-#         except Exception as e:
-#             return Response({"success": False, "error": str(e)}, status=500)
+            student = User.objects(id=student_id).first()
+            exam = Exam.objects(id=exam_id).first()
 
+            if not student or not exam:
+                return Response({
+                    "success": False,
+                    "message": "Student or Exam not found"
+                })
 
-# class AddViolationView(APIView):
+            attempt = ExamAttempt.objects(
+                student=student,
+                exam=exam
+            ).first()
 
-#     def post(self, request):
-#         try:
-#             student_id = request.data.get("student")
-#             exam_id = request.data.get("exam")
-#             message = request.data.get("message")
-#             screenshot = request.data.get("screenshot")
+            if not attempt:
+                return Response({
+                    "success": False,
+                    "message": "Exam attempt not found"
+                })
 
-#             if not student_id or not exam_id or not message:
-#                 return Response({"error": "Missing required fields"}, status=400)
+            # update result
+            attempt.attempt.status = "Submitted"
+            attempt.attempt.score = score
+            attempt.attempt.submitted_at = datetime.utcnow()
 
-#             student = User.objects(id=ObjectId(student_id)).first()
-#             exam = Exam.objects(id=ObjectId(exam_id)).first()
+            attempt.save()
 
-#             if not student or not exam:
-#                 return Response({"error": "Student or Exam not found"}, status=404)
+            return Response({
+                "success": True,
+                "message": "Exam submitted successfully"
+            })
 
-#             attempt = ExamAttempt.objects(student=student, exam=exam).first()
+        except Exception as e:
 
-#             if not attempt:
-#                 return Response({"error": "Attempt not found"}, status=404)
+            return Response({
+                "success": False,
+                "message": str(e)
+            }, status=500)
+        
 
-#             violation = Violation(
-#                 type=message,
-#                 screenshot=screenshot,
-#                 timestamp=datetime.utcnow()
-#             )
+class Terminate(APIView):
+    def post(self, request):
+        studentId = request.data.get("student_id")
+        examId = request.data.get("exam_id")
+        terminate = request.data.get("terminate")
 
-#             attempt.violations.append(violation)
+        try:
+            student = User.objects(id=studentId).first()
+            exam = Exam.objects(id=examId).first()
 
-#             violation_count = len(attempt.violations)
+            if not student or not exam:
+                return Response({
+                    "success": False,
+                    "message": "Student or Exam not found"
+                })
+            
+            attempt = ExamAttempt.objects(student=student, exam=exam).first()
 
-#             attempt.attempt.violations_count = violation_count
-#             attempt.attempt.risk = calculate_risk(violation_count)
+            if not attempt:
+                return Response({
+                    "success": False,
+                    "message": "Exam attempt not found"
+                })
+            
+            attempt.attempt.isTerminated = terminate
+            attempt.save()
 
-#             attempt.save()
+            return Response({
+                "success": True,
+                "message": "Candidate is treminated"
+            })
 
-#             return Response({
-#                 "success": True,
-#                 "violations_count": violation_count,
-#                 "risk": attempt.attempt.risk
-#             })
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": str(e)
+            }, status=500)
 
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=500)
+class GetTerminate(APIView):
+    def get(self, request, exam_id):
+        attempts = ExamAttempt.objects(exam=exam_id)
+
+        data = []
+
+        for a in attempts:
+            if a.attempt.isTerminated:
+                data.append({
+                    "attempt_id": str(a.id),
+                    "student":{
+                        "id": str(a.student.id),
+                        "cId": a.student.cId,
+                        "name": a.student.name,
+                        "email": a.student.email
+                    },
+                    "exam_name": a.exam.name,
+                    "subject": a.exam.subject,
+                    "score": a.attempt.score,
+                    "risk_score": a.attempt.risk_score if a.attempt else 0,
+                    "risk": a.attempt.risk if a.attempt else "LOW",
+                    "violations_count": a.attempt.violations_count if a.attempt else 0,
+                    "status": a.attempt.status if a.attempt else "Not Started",
+                })
+
+        return Response({
+            "success": True,
+            "data": data
+        })
+    

@@ -34,8 +34,11 @@ class Attempt(me.EmbeddedDocument):
     status = me.StringField(default="In Progress")
     score = me.IntField(default=0)
     violations_count = me.IntField(default=0)
-    recording = me.BooleanField(default=False)
+    recording = me.BooleanField(default=True)
     risk = me.StringField(default="LOW")
+    submitted_at = me.DateTimeField()
+    risk_score = me.IntField(default=0)
+    isTerminated = me.BooleanField(default=False)
     report_pdf = me.FileField()   
 
 

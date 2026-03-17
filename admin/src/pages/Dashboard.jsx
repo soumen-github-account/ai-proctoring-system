@@ -1,39 +1,25 @@
-import React from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import RiskOverview from '../components/RiskOverview';
 import FlaggedCandidates from '../components/FlaggedCandidates';
-
-const riskData = [
-  { name: "Low Risk", value: 65 },
-  { name: "Medium Risk", value: 25 },
-  { name: "High Risk", value: 10 }
-];
-
-
-const candidateData = [
-  {
-    id: "CAND001",
-    name: "John Doe",
-    exam: "Math Test",
-    riskLevel: "High",
-    trustScore: 42
-  },
-  {
-    id: "CAND002",
-    name: "Emma K",
-    exam: "CS Exam",
-    riskLevel: "Medium",
-    trustScore: 68
-  },
-  {
-    id: "CAND003",
-    name: "David P",
-    exam: "Final Assessment",
-    riskLevel: "Low",
-    trustScore: 92
-  }
-];
+import { AppContext } from '../contexts/AppContext';
+import axios from 'axios';
 
 const Dashboard = () => {
+  const {flaggedCandidates, backendUrl, activeExams, flaggedCandidate, totalCandidate} = useContext(AppContext);
+  const [allStudent, setAllStudent] = useState('');
+  const fetchStudent = async()=>{
+    try {
+      const {data} = await axios.get(`${backendUrl}/api/users/students/`);
+      setAllStudent(data.length);
+    } catch (err) {
+      toast.error("Failed to load student")
+    }
+  }
+
+  useEffect(()=>{
+    fetchStudent()
+  }, [])
+
   return (
     <div className=''>
       <div className="
@@ -69,7 +55,7 @@ const Dashboard = () => {
         >
           {/* Card 1 */}
           <div className="px-6 py-5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300">
-            <p className="text-3xl font-semibold text-gray-900">120</p>
+            <p className="text-3xl font-semibold text-gray-900">{allStudent}</p>
             <span className="text-sm text-gray-600 mt-1 flex items-center gap-3">
               <p>Total candidates</p>
               <div className="w-2 h-2 rounded-full bg-yellow-500" />
@@ -78,7 +64,7 @@ const Dashboard = () => {
 
           {/* Card 2 */}
           <div className="px-6 py-5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300">
-            <p className="text-3xl font-semibold text-gray-900">58</p>
+            <p className="text-3xl font-semibold text-gray-900">{totalCandidate}</p>
             <span className="text-sm text-gray-600 mt-1 flex items-center gap-3">
               <p>Live candidates</p>
               <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -87,7 +73,7 @@ const Dashboard = () => {
 
           {/* Card 3 */}
           <div className="px-6 py-5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300">
-            <p className="text-3xl font-semibold text-gray-900">5</p>
+            <p className="text-3xl font-semibold text-gray-900">{activeExams}</p>
             <span className="text-sm text-gray-600 mt-1 flex items-center gap-3">
               <p>Active Exams</p>
               <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -96,7 +82,7 @@ const Dashboard = () => {
 
           {/* Card 4 */}
           <div className="px-6 py-5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300">
-            <p className="text-3xl font-semibold text-gray-900">10</p>
+            <p className="text-3xl font-semibold text-gray-900">{flaggedCandidate}</p>
             <span className="text-sm text-gray-600 mt-1 flex items-center gap-3">
               <p>Flagged Candidates</p>
               <div className="w-2 h-2 rounded-full bg-red-500" />
@@ -107,8 +93,8 @@ const Dashboard = () => {
 
 
       <div className='grid grid-cols-2 max-sm:grid-cols-1 mt-5 gap-7'>
-        <RiskOverview data={riskData} />
-        <FlaggedCandidates candidates={candidateData} />
+        <RiskOverview attempts={flaggedCandidates} />
+        <FlaggedCandidates candidates={flaggedCandidates} />
       </div>
     </div>
   )

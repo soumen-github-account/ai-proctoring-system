@@ -1,7 +1,7 @@
 const riskColor = {
-  High: "bg-red-100 text-red-700",
-  Medium: "bg-yellow-100 text-yellow-700",
-  Low: "bg-green-100 text-green-700"
+  HIGH: "bg-red-100 text-red-700",
+  MEDIUM: "bg-yellow-100 text-yellow-700",
+  LOW: "bg-green-100 text-green-700"
 };
 
 const FlaggedCandidates = ({ candidates }) => {
@@ -22,16 +22,16 @@ const FlaggedCandidates = ({ candidates }) => {
         <tbody>
           {candidates.map((c) => (
             <tr key={c.id} className="border-b-1 border-b-gray-300 last:border-none">
-              <td className="py-2">{c.name}</td>
-              <td>{c.exam}</td>
+              <td className="py-2">{c.student.name}</td>
+              <td>{c.exam_name}</td>
               <td>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${riskColor[c.riskLevel]}`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${riskColor[c.risk]}`}
                 >
-                  {c.riskLevel}
+                  {c.risk}
                 </span>
               </td>
-              <td className="font-semibold">{c.trustScore}</td>
+              <td className="font-semibold">{c.risk_score}</td>
             </tr>
           ))}
         </tbody>
