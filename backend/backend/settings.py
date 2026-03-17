@@ -115,7 +115,7 @@ CHANNEL_LAYERS = {
 # }
 
 connect(
-    host='mongodb+srv://ai-proctoring-db:proctoring1234@cluster0.1jttplm.mongodb.net/?appName=Cluster0'
+    host=os.getenv("MONGODB_URI")
 )
 
 
