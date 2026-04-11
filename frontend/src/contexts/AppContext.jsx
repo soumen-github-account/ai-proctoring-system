@@ -282,7 +282,8 @@ export const AppContextProvider = ({ children }) => {
   const [exam, setExam] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false)
-
+  const [status, setStatus] = useState(null)
+  const [answers, setAnswers] = useState([])
 
   const navigate = useNavigate();
 
@@ -302,7 +303,7 @@ export const AppContextProvider = ({ children }) => {
       );
 
       if (!data.success) {
-        toast.error("Invalid credentials");
+        toast.error(data.message);
         setLoadingUser(false);
         return false;
       }
@@ -318,7 +319,8 @@ export const AppContextProvider = ({ children }) => {
       return true;
 
     } catch (err) {
-
+      console.log(err.response);
+      
       toast.error("Login failed");
       return false;
 
@@ -378,6 +380,8 @@ export const AppContextProvider = ({ children }) => {
           selectedOption: null
         }));
 
+        console.log(formatted);
+        
         setQuestions(formatted);
       }
 
@@ -388,13 +392,26 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
+  const fetchStatus = async() =>{
+    try {
+      const {data} = await axios.get(`${backendUrl}/api/exams/get-status/${user.id}/`)
+      
+      if(data.success){
+        setStatus(data.status)
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
   useEffect(() => {
 
     if (user) {
       fetchExam();
+      fetchStatus()
     }
 
   }, [user]);
+
 
   // ================= START ATTEMPT =================
   // const startExamAttempt = async () => {
@@ -428,22 +445,19 @@ export const AppContextProvider = ({ children }) => {
     setSubmitLoading(true)
     if (!exam?.id || !user?.id) return;
 
-    const score = questions.reduce(
-      (t, q) => (q.selectedOption === q.correct_answer ? t + 1 : t),
-      0
-    );
-
     const payload = {
       student: user.id,
       exam: exam.id,
-      score
+      answers: answers
     };
 
     try {
       const {data} = await axios.post(`${backendUrl}/api/exams/submit-exam/`, payload);
       if(data.success){
         setSubmitLoading(false);
-        toast.success(data.message)
+        toast.success("Exam Submitted")
+        navigate("/")
+        fetchStatus()
       } else{
         toast.error(data.message)
       }
@@ -463,7 +477,8 @@ export const AppContextProvider = ({ children }) => {
     setQuestions,
     submitExam,
     backendUrl,
-    submitLoading, setSubmitLoading
+    submitLoading, setSubmitLoading, status,
+    answers, setAnswers
   };
 
   return (

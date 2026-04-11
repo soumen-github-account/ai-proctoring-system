@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Exam, Question, ExamAttempt, Attempt, Violation
+from .models import Exam, Question, ExamAttempt, Attempt, Violation, Answer
 from .serializer import ExamSerializer, SubmitExamSerializer
 from django.http import HttpResponse
 from apps.users.models import User
@@ -18,7 +18,6 @@ from io import BytesIO
 import cloudinary
 import cloudinary.uploader
 from django.conf import settings
-
 
 class CreateExam(APIView):
     def post(self, request):
@@ -201,7 +200,6 @@ class AddViolation(APIView):
                     "message": "Student or Exam not found"
                 })
 
-            # find exam attempt
             attempt = ExamAttempt.objects(student=student, exam=exam).first()
 
             if not attempt:
@@ -395,15 +393,65 @@ class GetExamAttempts(APIView):
         })
     
 
+# class SubmitExam(APIView):
+
+#     def post(self, request):
+
+#         student_id = request.data.get("student")
+#         exam_id = request.data.get("exam")
+#         score = request.data.get("score")
+
+#         try:
+
+#             student = User.objects(id=student_id).first()
+#             exam = Exam.objects(id=exam_id).first()
+
+#             if not student or not exam:
+#                 return Response({
+#                     "success": False,
+#                     "message": "Student or Exam not found"
+#                 })
+
+#             attempt = ExamAttempt.objects(
+#                 student=student,
+#                 exam=exam
+#             ).first()
+
+#             if not attempt:
+#                 return Response({
+#                     "success": False,
+#                     "message": "Exam attempt not found"
+#                 })
+
+#             # update result
+#             attempt.attempt.status = "Submitted"
+#             attempt.attempt.score = score
+#             attempt.attempt.submitted_at = datetime.utcnow()
+
+#             attempt.save()
+
+#             return Response({
+#                 "success": True,
+#                 "message": "Exam submitted successfully"
+#             })
+
+#         except Exception as e:
+
+#             return Response({
+#                 "success": False,
+#                 "message": str(e)
+#             }, status=500)
+
 class SubmitExam(APIView):
 
     def post(self, request):
 
-        student_id = request.data.get("student")
-        exam_id = request.data.get("exam")
-        score = request.data.get("score")
-
         try:
+            student_id = request.data.get("student")
+            exam_id = request.data.get("exam")
+            answers = request.data.get("answers", [])
+
+            print("📥 Incoming Answers:", answers)
 
             student = User.objects(id=student_id).first()
             exam = Exam.objects(id=exam_id).first()
@@ -419,13 +467,55 @@ class SubmitExam(APIView):
                 exam=exam
             ).first()
 
-            if not attempt:
+            if not attempt or not attempt.attempt:
                 return Response({
                     "success": False,
                     "message": "Exam attempt not found"
                 })
 
-            # update result
+            # ✅ fetch all questions of this exam
+            questions = Question.objects(exam=exam)
+
+            # ✅ fast lookup map
+            question_map = {str(q.id): q for q in questions}
+
+            score = 0
+            
+            for ans in answers:
+
+                qid = str(ans.get("question_id"))
+                selected = ans.get("selected_option")
+
+                if selected is None:
+                    continue
+
+                question = question_map.get(qid)
+
+                if not question:
+                    continue
+
+                if selected < 0 or selected >= len(question.options):
+                    continue
+
+                try:
+                    # ✅ convert "1" → 1
+                    if int(question.correct_answer) == selected:
+                        score += 1
+
+                except:
+                    # fallback if correct_answer is text
+                    if question.options[selected].strip().lower() == question.correct_answer.strip().lower():
+                        score += 1
+            
+            # ✅ save answers properly
+            attempt.attempt.answers = [
+                Answer(
+                    question_id=ObjectId(ans.get("question_id")),
+                    selected_option=ans.get("selected_option")
+                )
+                for ans in answers
+            ]
+
             attempt.attempt.status = "Submitted"
             attempt.attempt.score = score
             attempt.attempt.submitted_at = datetime.utcnow()
@@ -434,16 +524,18 @@ class SubmitExam(APIView):
 
             return Response({
                 "success": True,
-                "message": "Exam submitted successfully"
+                "score": score
             })
 
         except Exception as e:
+            import traceback
+            print("🔥 ERROR:", str(e))
+            traceback.print_exc()
 
             return Response({
                 "success": False,
                 "message": str(e)
             }, status=500)
-        
 
 class Terminate(APIView):
     def post(self, request):
@@ -513,3 +605,17 @@ class GetTerminate(APIView):
             "data": data
         })
     
+class get_student_status(APIView):
+    def get(self, request, id):
+        studentId = id
+
+        if not studentId:
+            return Response({"success": False, "message":"Id not found"})
+        
+        student = ExamAttempt.objects(student=studentId).first()
+
+        if student:
+            status = student.attempt.status
+            return Response({"success": True, "status": status})
+        
+        return Response({"success": False})

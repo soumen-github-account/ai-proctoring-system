@@ -11,6 +11,7 @@ const AddCandidate = () => {
     const [editingCandidate, setEditingCandidate] = useState(null);
     const [loading, setLoading] = useState(false)
     const [deleteLoading, setDeleteLoading] = useState(false)
+    const [deleteLoadingId, setDeleteLoadingId] = useState(null);
 
     const handleAdd = async(candidate) => {
       setLoading(true)
@@ -66,21 +67,21 @@ const AddCandidate = () => {
     };
 
     const handleDelete = async(id) => {
-      setDeleteLoading(true)
+      setDeleteLoadingId(id);
       try {
         const {data} = await axios.delete(`${backendUrl}/api/users/delete-student/${id}/`)
 
         if(data.success){
           toast.success(data.message)
           fetchStudent()
-          setDeleteLoading(false)
+          setDeleteLoadingId(null);
         } else{
           toast.error(data.message)
-          setDeleteLoading(true)
+          setDeleteLoadingId(null);
         }
       } catch (err) {
         console.log(err)
-        setDeleteLoading(false)
+        setDeleteLoadingId(null);
       }
     };
 
@@ -96,6 +97,8 @@ const AddCandidate = () => {
     useEffect(()=>{
       fetchStudent()
     },[])
+
+    
   return (
     <div className="p-6 bg-gray-50 min-h-[90vh]">
         <h1 className="text-2xl font-semibold mb-6">
@@ -113,7 +116,7 @@ const AddCandidate = () => {
           candidates={candidates}
           onEdit={setEditingCandidate}
           onDelete={handleDelete}
-          deleteLoading={deleteLoading}
+          deleteLoadingId={deleteLoadingId}
         />
       </div>
     </div>

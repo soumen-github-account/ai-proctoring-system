@@ -3,6 +3,7 @@
 import cv2
 import mediapipe as mp
 from ultralytics import YOLO
+import numpy as np
 
 MODEL_PATH = r"C:\models\yolov8n.pt"
 model = YOLO(MODEL_PATH)
@@ -28,7 +29,7 @@ class AIEngine:
         h, w, _ = frame.shape
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # 📱 PHONE DETECTION
+        #  PHONE DETECTION
         results = model(frame, verbose=False)
 
         for r in results:
@@ -49,7 +50,7 @@ class AIEngine:
 
                     violations.append("MOBILE_PHONE_DETECTED")
 
-        # 👤 FACE DETECTION
+        #  FACE DETECTION
         res = self.face_detection.process(rgb)
 
         face_count = len(res.detections) if res.detections else 0
@@ -66,3 +67,5 @@ class AIEngine:
             violations.append("MULTIPLE_FACES_DETECTED")
 
         return violations
+
+

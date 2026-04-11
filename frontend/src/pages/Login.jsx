@@ -37,7 +37,7 @@ const Login = () => {
                 type="text"
                 value={userId}
                 onChange={(e)=>setUserId(e.target.value)}
-                placeholder="student@email.com"
+                placeholder="student123"
                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-400 focus:outline-none"
               />
             </div>

@@ -2,12 +2,13 @@ import { useContext, useState } from "react";
 import {AppContext} from "../contexts/AppContext";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
-const Navbar = () => {
+const Navbar = ({stopCamera}) => {
   const {exam, submitExam, submitLoading} = useContext(AppContext)
   const [showPopup, setShowPopup] = useState(false);
 
   const handleSubmit = () => {
     submitExam();
+    stopCamera()
     setShowPopup(false);
   };
 

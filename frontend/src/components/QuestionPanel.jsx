@@ -1,6 +1,12 @@
+import { useContext } from "react";
+import AppContext from "../contexts/AppContext";
 
 
 const QuestionPanel = ({ question, questionNumber, onSave, onClear, onNext, onPrev }) => {
+  const {answers} = useContext(AppContext)
+  const selectedOption = answers.find(
+    (a) => a.question_id === question.id
+  )?.selected_option;
   return (
     <div className="flex-1 p-6">
       <h2 className="font-semibold mb-4">Q: {questionNumber}</h2>
@@ -12,14 +18,14 @@ const QuestionPanel = ({ question, questionNumber, onSave, onClear, onNext, onPr
           <label
             key={idx}
             className={`flex items-center gap-3 border-1 border-gray-300 p-3 rounded cursor-pointer
-              ${question.selectedOption === idx ? "bg-blue-100 border-blue-500" : ""}
+              ${selectedOption === idx ? "bg-blue-100 border-blue-500" : ""}
             `}
           >
             <input
               type="radio"
-              name="option"
-              checked={question.selectedOption === idx}
-              onChange={() => onSave(idx)}
+              name={`question-${question.id}`}
+              checked={selectedOption === idx}
+              onChange={() => onSave(question.id, idx)}
             />
             {opt}
           </label>
@@ -32,7 +38,7 @@ const QuestionPanel = ({ question, questionNumber, onSave, onClear, onNext, onPr
         </button>
 
         <div className="flex gap-3">
-          <button onClick={onClear} className="border-1 border-gray-300 px-4 py-2 rounded">
+          <button onClick={() => onClear(question.id)} className="border-1 border-gray-300 px-4 py-2 rounded">
             Clear Response
           </button>
 

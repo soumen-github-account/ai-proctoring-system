@@ -29,9 +29,14 @@ class Violation(me.EmbeddedDocument):
     count = me.IntField(default=1)
     screenshots = me.ListField(me.StringField())
     timestamp = me.DateTimeField(default=datetime.utcnow)
+    
+class Answer(me.EmbeddedDocument):
+    question_id = me.ObjectIdField(required=True)
+    selected_option = me.IntField(required=True)
 
 class Attempt(me.EmbeddedDocument):
     status = me.StringField(default="In Progress")
+    answers = me.EmbeddedDocumentListField(Answer)
     score = me.IntField(default=0)
     violations_count = me.IntField(default=0)
     recording = me.BooleanField(default=True)

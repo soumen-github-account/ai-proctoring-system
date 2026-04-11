@@ -8,7 +8,7 @@ import { Trash } from 'lucide-react';
 import { LoaderCircle } from 'lucide-react';
 
 
-const CandidateList = ({ candidates, onEdit, onDelete, deleteLoading }) => {
+const CandidateList = ({ candidates, onEdit, onDelete, deleteLoadingId }) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border-1 border-gray-300 p-6">
       <h2 className="text-lg font-semibold mb-4">Candidates</h2>
@@ -42,13 +42,13 @@ const CandidateList = ({ candidates, onEdit, onDelete, deleteLoading }) => {
                 <p>Edit</p>
               </button>
               <button
-                disabled={deleteLoading}
+                disabled={deleteLoadingId === candidate.studentId}
                 onClick={() => onDelete(candidate.studentId)}
                 className="px-3 py-1 text-sm rounded-md bg-rose-600 text-white"
               >
 
                 {
-                  deleteLoading ? 
+                  deleteLoadingId === candidate.studentId ?
                   <LoaderCircle className='animate-spin' />
                   :
                   <span className='flex items-center gap-2'>

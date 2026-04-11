@@ -9,7 +9,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const Exam = () => {
-  const { questions, setQuestions, exam, backendUrl } = useContext(AppContext);
+  const { questions, setQuestions, exam, backendUrl, answers, setAnswers } = useContext(AppContext);
   // const [questions, setQuestions] = useState(examData.questions);
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentQuestion = questions[currentIndex];
@@ -24,7 +24,8 @@ const Exam = () => {
   const [screenStream, setScreenStream] = useState(null);
 
   const violationsRef = useRef([]);
-
+  const streamRef = useRef(null);
+  
   const [cameraReady, setCameraReady] = useState(false);
   const [screenReady, setScreenReady] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
@@ -46,25 +47,44 @@ const Exam = () => {
   //     setQuestions(updated);
   // }
 
-  const saveAnswer = (optionIndex) => {
-    setQuestions((prev) =>
-      prev.map((q, i) =>
-        i === currentIndex
-          ? { ...q, selectedOption: optionIndex, status: "answered" }
-          : q,
-      ),
-    );
-  };
+  // const saveAnswer = (optionIndex) => {
+  //   setQuestions((prev) =>
+  //     prev.map((q, i) =>
+  //       i === currentIndex
+  //         ? { ...q, selectedOption: optionIndex, status: "answered" }
+  //         : q,
+  //     ),
+  //   );
+  // };
+  const saveAnswer = (questionId, selectedOption) => {
+    setAnswers(prev => {
+      const existing = prev.find(a => a.question_id === questionId)
 
-  const clearResponse = () => {
-    const updated = [...questions];
-    updated[currentIndex] = {
-      ...updated[currentIndex],
-      selectedOption: null,
-      status: "visited",
-    };
-    setQuestions(updated);
-  };
+      if (existing) {
+        return prev.map(a =>
+          a.question_id === questionId
+            ? { ...a, selected_option: selectedOption }
+            : a
+        )
+      } else {
+        return [...prev, { question_id: questionId, selected_option: selectedOption }]
+      }
+    })
+  }
+
+  // const clearResponse = () => {
+  //   const updated = [...questions];
+  //   updated[currentIndex] = {
+  //     ...updated[currentIndex],
+  //     selectedOption: null,
+  //     status: "visited",
+  //   };
+  //   setQuestions(updated);
+  // };
+
+  const clearResponse = (questionId) => {
+    setAnswers(prev => prev.filter(a => a.question_id !== questionId))
+  }
 
   const nextQuestion = () => {
     if (currentIndex < questions.length - 1) {
@@ -109,10 +129,16 @@ const Exam = () => {
 
       peerRef.current = peer;
 
+      // const stream = await navigator.mediaDevices.getUserMedia({
+      //   video: true,
+      //   audio: false,
+      // });
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: false,
       });
+
+      streamRef.current = stream;   
 
       videoRef.current.srcObject = stream;
       setCameraReady(true);
@@ -435,9 +461,20 @@ useEffect(() => {
 
 }, [exam?.id, user?.id, examReady]);
 
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col">
-      <Navbar />
+      <Navbar stopCamera={stopCamera}/>
       {currentQuestion && (
         <div className="flex flex-1 overflow-hidden">
           <LeftSidebar

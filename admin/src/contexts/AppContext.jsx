@@ -16,7 +16,6 @@ export const AppContextProvider = ({children}) =>{
     const [flaggedCandidate, setFlaggedCandidate] = useState('4')
     const [highRiskedCandidate, setHighRiskCandidate] = useState('')
     
-
     const fetchExams = async () => {
         try {
         const { data } = await axios.get(`${backendUrl}/api/exams/get-exams/`);

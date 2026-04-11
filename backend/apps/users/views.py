@@ -52,18 +52,21 @@ class student_login(APIView):
     def post(self, request):
         print("REQUEST DATA:", request.data)
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            print("❌ SERIALIZER ERRORS:", serializer.errors)
+            return Response(serializer.errors, status=400)
 
         candidateId = serializer.validated_data['candidateId']
         password = serializer.validated_data['password']
-
+        print("candidateId:", candidateId)
+        print("password:", password)
         user = User.objects(cId=candidateId).first()
 
         if not user:
-            return Response({"success": False, "message": "User not found"}, status=404)
+            return Response({"success": False, "message": "User not found"})
 
         if not verify_password(password, user.password):
-            return Response({"success": False, "error": "Invalid credentials"}, status=400)
+            return Response({"success": False, "message": "Invalid password"})
 
         tokens = get_tokens_for_user(user)
 
@@ -136,3 +139,5 @@ class update_student(APIView):
         student.save()
 
         return Response({"success": True, "message": "Student updated successfully"})
+    
+
