@@ -18,7 +18,7 @@ export const AppContextProvider = ({children}) =>{
     
     const fetchExams = async () => {
         try {
-        const { data } = await axios.get(`${backendUrl}/api/exams/get-exams/`);
+        const { data } = await axios.get(`${backendUrl}/api/exams/get-exams/`, {withCredentials: true});
         if (data.success) {
             setExams(data.exams);
             // console.log(data.exams)
@@ -31,7 +31,7 @@ export const AppContextProvider = ({children}) =>{
     const fetchExam = async () => {
         try {
         const { data } = await axios.get(
-            `${backendUrl}/api/exams/get-first-exam/`
+            `${backendUrl}/api/exams/get-first-exam/`, {withCredentials: true}
         );
 
         if (data.success) {
@@ -47,7 +47,7 @@ export const AppContextProvider = ({children}) =>{
     const fetchCandidates = async () => {
         try {
             const { data } = await axios.get(
-                `${backendUrl}/api/exams/get-examAttempts/${exam.id}`
+                `${backendUrl}/api/exams/get-examAttempts/${exam.id}`, {withCredentials: true}
             );
 
             if (data.success) {
@@ -65,7 +65,7 @@ export const AppContextProvider = ({children}) =>{
 
     const getFlaggedCandidates = async() =>{
         try {
-            const {data} = await axios.get(`${backendUrl}/api/exams/get-terminated-candidates/${exam.id}`)
+            const {data} = await axios.get(`${backendUrl}/api/exams/get-terminated-candidates/${exam.id}`, {withCredentials: true})
 
             if(data.success){
                 console.log(data.data);

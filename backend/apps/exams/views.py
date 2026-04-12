@@ -473,10 +473,10 @@ class SubmitExam(APIView):
                     "message": "Exam attempt not found"
                 })
 
-            # ✅ fetch all questions of this exam
+            #  fetch all questions of this exam
             questions = Question.objects(exam=exam)
 
-            # ✅ fast lookup map
+            # fast lookup map
             question_map = {str(q.id): q for q in questions}
 
             score = 0
@@ -498,7 +498,7 @@ class SubmitExam(APIView):
                     continue
 
                 try:
-                    # ✅ convert "1" → 1
+                    # convert "1" → 1
                     if int(question.correct_answer) == selected:
                         score += 1
 
@@ -507,7 +507,7 @@ class SubmitExam(APIView):
                     if question.options[selected].strip().lower() == question.correct_answer.strip().lower():
                         score += 1
             
-            # ✅ save answers properly
+            # save answers properly
             attempt.attempt.answers = [
                 Answer(
                     question_id=ObjectId(ans.get("question_id")),

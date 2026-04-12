@@ -16,6 +16,7 @@ from pathlib import Path
 import cloudinary
 import os
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -37,8 +38,15 @@ SECRET_KEY = 'django-insecure-su*pr34dky)__%x@i4jz@ak%gl)4gtaop2rj*d$rrhbje$%f=-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = [
+    ".ngrok-free.dev",
+    "localhost",
+    "127.0.0.1",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.app",
+    "https://*.ngrok-free.dev",
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -68,9 +76,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'backend.urls'
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://caviar-mumbo-squiggle.ngrok-free.dev",
+]
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'authorization',
+]
 
 TEMPLATES = [
     {

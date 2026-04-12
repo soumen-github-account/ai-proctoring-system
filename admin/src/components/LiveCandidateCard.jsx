@@ -2,7 +2,9 @@ const VIOLATION_LABELS = {
   MOBILE_PHONE_DETECTED: "📱 Mobile Phone",
   MULTIPLE_FACES_DETECTED: "❌ Multiple Faces",
   NO_FACE_DETECTED: "🙈 No Face",
-  HEAD_MOVEMENT_SUSPICIOUS: "🧠 Head Movement",
+  LOOKING_DOWN: "Looking down",
+  LOOKING_RIGHT: "Looking Right",
+  LOOKING_LEFT: "Looking Left"
 };
 
 const LiveCandidateCard = ({ candidate, videoRef, violations = [] }) => {

@@ -5,7 +5,7 @@ import { AppContext } from '../contexts/AppContext';
 import axios from 'axios';
 
 const Dashboard = () => {
-  const {flaggedCandidates, backendUrl, activeExams, flaggedCandidate, totalCandidate} = useContext(AppContext);
+  const {flaggedCandidates, backendUrl, activeExams, flaggedCandidate, totalCandidate, candidates} = useContext(AppContext);
   const [allStudent, setAllStudent] = useState('');
   const fetchStudent = async()=>{
     try {
@@ -93,8 +93,8 @@ const Dashboard = () => {
 
 
       <div className='grid grid-cols-2 max-sm:grid-cols-1 mt-5 gap-7'>
-        <RiskOverview attempts={flaggedCandidates} />
-        <FlaggedCandidates candidates={flaggedCandidates} />
+        <RiskOverview attempts={candidates} />
+        <FlaggedCandidates candidates={candidates} />
       </div>
     </div>
   )

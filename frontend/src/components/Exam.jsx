@@ -445,7 +445,7 @@ useEffect(() => {
       await axios.post(`${backendUrl}/api/exams/start-exam/`, {
         student: user.id,
         exam: exam.id
-      });
+      }, {withCredentials: true});
 
       console.log("✅ Exam attempt created");
 

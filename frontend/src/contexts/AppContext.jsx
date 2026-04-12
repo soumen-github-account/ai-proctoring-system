@@ -299,7 +299,7 @@ export const AppContextProvider = ({ children }) => {
         {
           candidateId: userId,
           password
-        }
+        }, {withCredentials: true}
       );
 
       if (!data.success) {
@@ -350,7 +350,7 @@ export const AppContextProvider = ({ children }) => {
     try {
 
       const { data } = await axios.get(
-        `${backendUrl}/api/exams/get-first-exam/`
+        `${backendUrl}/api/exams/get-first-exam/`, {withCredentials: true}
       );
 
       if (data.success) {
@@ -370,7 +370,7 @@ export const AppContextProvider = ({ children }) => {
     try {
 
       const { data } = await axios.get(
-        `${backendUrl}/api/exams/questions/${id}/`
+        `${backendUrl}/api/exams/questions/${id}/`, {withCredentials: true}
       );
 
       if (data.success) {
@@ -394,7 +394,7 @@ export const AppContextProvider = ({ children }) => {
 
   const fetchStatus = async() =>{
     try {
-      const {data} = await axios.get(`${backendUrl}/api/exams/get-status/${user.id}/`)
+      const {data} = await axios.get(`${backendUrl}/api/exams/get-status/${user.id}/`, {withCredentials: true})
       
       if(data.success){
         setStatus(data.status)
@@ -452,10 +452,11 @@ export const AppContextProvider = ({ children }) => {
     };
 
     try {
-      const {data} = await axios.post(`${backendUrl}/api/exams/submit-exam/`, payload);
+      const {data} = await axios.post(`${backendUrl}/api/exams/submit-exam/`, payload, {withCredentials: true});
       if(data.success){
         setSubmitLoading(false);
         toast.success("Exam Submitted")
+        navigator.mediaDevices.getUserMedia({video: true,audio: false,}).getTracks().forEach(track => track.stop());
         navigate("/")
         fetchStatus()
       } else{
