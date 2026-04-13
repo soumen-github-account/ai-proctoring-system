@@ -112,9 +112,9 @@ const Exam = () => {
 
   useEffect(() => {
     if (!exam?.id || !studentId) return;
-
+    // `ws://localhost:8000/ws/proctoring/student/${examId}/${studentId}/`,
     const socket = new WebSocket(
-      `ws://localhost:8000/ws/proctoring/student/${examId}/${studentId}/`,
+      `wss://caviar-mumbo-squiggle.ngrok-free.dev/ws/proctoring/student/${examId}/${studentId}/`,
     );
 
     socketRef.current = socket;

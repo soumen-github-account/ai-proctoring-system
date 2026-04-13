@@ -82,6 +82,7 @@ ROOT_URLCONF = 'backend.urls'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
+    "https://ai-proctoring-system-exam-panel.onrender.com",
     "https://caviar-mumbo-squiggle.ngrok-free.dev",
 ]
 CORS_ALLOW_HEADERS = list(default_headers) + [

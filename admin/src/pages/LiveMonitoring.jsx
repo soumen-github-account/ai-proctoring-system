@@ -13,10 +13,10 @@ const LiveMonitoring = () => {
   const streams = useRef({});
 
   const examId = "699145092d5dd8d82d370a05";
-
+  // `ws://localhost:8000/ws/proctoring/admin/${examId}/`,
   useEffect(() => {
     const socket = new WebSocket(
-      `ws://localhost:8000/ws/proctoring/admin/${examId}/`,
+      `wss://caviar-mumbo-squiggle.ngrok-free.dev/ws/proctoring/admin/${examId}/`
     );
 
     socketRef.current = socket;
