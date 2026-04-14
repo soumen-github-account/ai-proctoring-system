@@ -1,6 +1,6 @@
 
 from django.urls import path
-from .views import CreateExam, AddQuestion, GetQuestions, GetExams, UpdateExam, DeleteExam, DeleteQuestion, GetFirstExam, AddViolation, StartExam,GetExamAttempts, SubmitExam, Terminate, GetTerminate, get_student_status
+from .views import CreateExam, AddQuestion, GetQuestions, GetExams, UpdateExam, DeleteExam, DeleteQuestion, GetFirstExam, AddViolation, StartExam,GetExamAttempts, SubmitExam, Terminate, GetTerminate, get_student_status, publishedExam
 
 urlpatterns = [
     path('create/', CreateExam.as_view()),
@@ -17,6 +17,6 @@ urlpatterns = [
     path('get-examAttempts/<str:exam_id>/', GetExamAttempts.as_view()),
     path('action-terminate/', Terminate.as_view()),
     path('get-terminated-candidates/<str:exam_id>/', GetTerminate.as_view()),
-    path('get-status/<str:id>/', get_student_status.as_view())
-    # path('publish/<str:exam_id>/', PublishExam.as_view()),
+    path('get-status/<str:id>/', get_student_status.as_view()),
+    path('publish/', publishedExam.as_view()),
 ]

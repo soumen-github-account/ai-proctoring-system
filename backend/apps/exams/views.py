@@ -619,3 +619,20 @@ class get_student_status(APIView):
             return Response({"success": True, "status": status})
         
         return Response({"success": False})
+    
+class publishedExam(APIView):
+    def post(self, request):
+        publish = request.data.get("publish")
+        examId = request.data.get("id")
+
+        exam = Exam.objects(id=examId).first()
+        
+        if publish:
+            exam.is_published = publish
+            exam.save()
+            return Response({"success": True, "message": "exam published" })
+        else:
+            exam.is_published = publish
+            exam.save()
+            return Response({"success": True, "message": "exam unpublished" })
+        

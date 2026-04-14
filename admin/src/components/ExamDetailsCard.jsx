@@ -14,6 +14,7 @@ const ExamDetailsCard = () => {
   const [dloading, setDloading] = useState(false)
   const [id, setId] = useState("");
   const [showQuestions, setShowQuestions] = useState(false)
+  const [enabledMap, setEnabledMap] = useState({});
 
   const [form, setForm] = useState({
     examName: "",
@@ -105,6 +106,35 @@ const ExamDetailsCard = () => {
     }
   }
 
+  const publish = async (id, publishStatus) => {
+    try {
+      const { data } = await axios.post(
+        `${backendUrl}/api/exams/publish/`,
+        {
+          id: id,
+          publish: publishStatus,
+        }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+    if (exams.length > 0) {
+      const map = {};
+      exams.forEach((exam) => {
+        map[exam._id || exam.id] = exam.is_published; 
+      });
+      setEnabledMap(map);
+    }
+  }, [exams]);
   return (
     <div className="bg-white rounded-2xl shadow-sm border-1 border-gray-300 p-6">
       {
@@ -203,8 +233,37 @@ const ExamDetailsCard = () => {
                 }
               </button>
               <button onClick={()=>setEditId(null)} type="button" className={`py-2 px-9 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-300 ${!isEditing && "hidden"}`}>Cancle</button>
+              
             </div>
+
           </form>
+            <div className="flex items-center mt-5">
+              <button
+                onClick={() => {
+                          const newValue = !enabledMap[e._id || e.id];
+
+                          setEnabledMap((prev) => ({
+                            ...prev,
+                            [e._id || e.id]: newValue,
+                          }));
+
+                          publish(e._id || e.id, newValue);
+                        }}
+                className={`w-14 h-8 flex items-center rounded-full p-1 duration-300 ${
+                  enabledMap[e._id || e.id] ? "bg-blue-500" : "bg-gray-300"
+                }`}
+              >
+                <div
+                  className={`bg-white w-6 h-6 rounded-full shadow-md transform duration-300 ${
+                    enabledMap[e._id || e.id] ? "translate-x-6" : ""
+                  }`}
+                />
+              </button>
+
+              <span className="ml-3 text-md font-medium">
+                {enabledMap[e._id || e.id] ? "Published" : "Unpublished"}
+              </span>
+            </div>
           </div>
           )})
         )
