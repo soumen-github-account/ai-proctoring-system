@@ -145,17 +145,32 @@ const LiveMonitoring = () => {
         }
       }
 
+      // if (type === "student-ready") {
+      //   const studentId = String(data.studentId);
+
+      //   console.log("👨‍🎓 STUDENT READY", studentId);
+
+      //   socket.send(
+      //     JSON.stringify({
+      //       type: "watch-student",
+      //       studentId,
+      //     }),
+      //   );
+      // }
       if (type === "student-ready") {
         const studentId = String(data.studentId);
 
         console.log("👨‍🎓 STUDENT READY", studentId);
 
-        socket.send(
-          JSON.stringify({
-            type: "watch-student",
-            studentId,
-          }),
-        );
+        // 🔥 delay prevents race condition after refresh
+        setTimeout(() => {
+          socket.send(
+            JSON.stringify({
+              type: "watch-student",
+              studentId,
+            })
+          );
+        }, 500);
       }
 
       if (type === "violation") {
