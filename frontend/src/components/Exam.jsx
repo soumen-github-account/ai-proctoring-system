@@ -347,64 +347,64 @@ const Exam = () => {
 // }, []);
 
   // ================= SCREEN SHARE =================
-useEffect(() => {
+// useEffect(() => {
 
-  const startScreenShare = async () => {
+//   const startScreenShare = async () => {
 
-    try {
+//     try {
 
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: false
-      });
+//       const stream = await navigator.mediaDevices.getDisplayMedia({
+//         video: true,
+//         audio: false
+//       });
 
-      const track = stream.getVideoTracks()[0];
-      const settings = track.getSettings();
+//       const track = stream.getVideoTracks()[0];
+//       const settings = track.getSettings();
 
-      // settings.displaySurface can be: "monitor" | "window" | "browser"
-      if (settings.displaySurface !== "monitor") {
+//       // settings.displaySurface can be: "monitor" | "window" | "browser"
+//       if (settings.displaySurface !== "monitor") {
 
-        toast.error("❌ Please share your entire screen (Entire Screen), not a tab/window.");
+//         toast.error("❌ Please share your entire screen (Entire Screen), not a tab/window.");
 
-        // stop stream
-        stream.getTracks().forEach(t => t.stop());
+//         // stop stream
+//         stream.getTracks().forEach(t => t.stop());
 
-        await sendViolation("SCREEN_SHARE_NOT_MONITOR");
+//         await sendViolation("SCREEN_SHARE_NOT_MONITOR");
 
-        // redirect / block exam
-        window.location.href = "/";
-        return;
-      }
+//         // redirect / block exam
+//         window.location.href = "/";
+//         return;
+//       }
 
-      // OK → Entire screen shared
-      setScreenStream(stream);
-      setScreenReady(true);
-      toast.success("Entire screen sharing started");
+//       // OK → Entire screen shared
+//       setScreenStream(stream);
+//       setScreenReady(true);
+//       toast.success("Entire screen sharing started");
 
-      track.addEventListener("ended", async () => {
+//       track.addEventListener("ended", async () => {
 
-        await sendViolation("SCREEN_SHARE_STOPPED");
+//         await sendViolation("SCREEN_SHARE_STOPPED");
 
-        toast.error("Screen sharing stopped. Exam will be submitted.");
+//         toast.error("Screen sharing stopped. Exam will be submitted.");
 
-        // optional: submitExam();
-      });
+//         // optional: submitExam();
+//       });
 
-    } catch (err) {
+//     } catch (err) {
 
-      console.log("❌ Screen share denied");
+//       console.log("❌ Screen share denied");
 
-      await sendViolation("SCREEN_SHARE_DENIED");
+//       await sendViolation("SCREEN_SHARE_DENIED");
 
-      toast.error("Screen sharing is required for the exam");
+//       toast.error("Screen sharing is required for the exam");
 
-      window.location.href = "/";
-    }
-  };
+//       window.location.href = "/";
+//     }
+//   };
 
-  startScreenShare();
+//   startScreenShare();
 
-}, []);
+// }, []);
 
   // ================= TAB SWITCH DETECTION =================
   useEffect(() => {
