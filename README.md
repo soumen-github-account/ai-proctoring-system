@@ -53,7 +53,7 @@ This project enables secure remote examinations through real-time candidate moni
 - Webcam Streaming
 
 ## Database
-- SQLite / PostgreSQL *(update according to your DB)*
+- MongoDB
 
 ---
 
@@ -87,7 +87,7 @@ Admin Dashboard Monitoring
 ## 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
+git clone https://github.com/soumen-github-account/ai-proctoring-system.git
 cd your-repo-name
 ```
 
@@ -124,8 +124,11 @@ Create `.env` files in frontend and backend.
 Example:
 
 ```env
-SECRET_KEY=your_secret_key
-DEBUG=True
+CLOUD_NAME=
+CLOUD_API_KEY=
+CLOUD_API_SECRET=
+MONGODB_URI=
+
 ```
 
 ---
@@ -139,8 +142,7 @@ DEBUG=True
 | AI Detection System | Detect suspicious activities |
 | Violation Storage | Save screenshots & logs |
 | Live Monitoring | Stream candidate video |
-
----
+----------------------------------------------
 
 # 📚 What We Learned
 
@@ -185,19 +187,35 @@ for continuous guidance, support, and mentorship throughout the project developm
 
 ---
 
-<!-- # 📸 Screenshots
+# 📸 Screenshots
 
 ## Admin Dashboard
-_Add Screenshot Here_
+![alt text](<Screenshot 2026-05-09 101347.png>)
+![alt text](<Screenshot 2026-05-09 101357.png>)
+![alt text](<Screenshot 2026-05-09 101408.png>)
+![alt text](<Screenshot 2026-05-09 101418.png>)
+![alt text](<Screenshot 2026-05-09 101428.png>)
+![alt text](<Screenshot 2026-05-09 101440.png>)
+
 
 ## Candidate Exam Interface
-_Add Screenshot Here_
+![alt text](<Screenshot 2026-05-09 085621.png>)
+![alt text](<Screenshot 2026-05-09 100853.png>)
+
 
 ## AI Violation Detection
-_Add Screenshot Here_
- -->
+![alt text](<Screenshot 2026-05-09 091541.png>)
+![alt text](<Screenshot 2026-05-09 091617.png>)
 
 ---
+# 🔗 Project Links
+
+## GitHub Repository
+https://github.com/soumen-github-account/ai-proctoring-system
+
+## My work
+https://portfolio-soumen-dev.netlify.app
+
 
 # 📄 License
 
