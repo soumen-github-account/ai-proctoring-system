@@ -15,7 +15,7 @@ const AllQuestions = ({onClose, id}) => {
                     <X className="text-gray-500 hover:text-black cursor-pointer" />
                 </button>
             </div>
-            <div className='flex flex-col p-3 gap-3'>
+            <div className='flex flex-col h-[90vh] p-3 gap-3 overflow-y-scroll'>
                 <QuestionList id={id} />
             </div>
             

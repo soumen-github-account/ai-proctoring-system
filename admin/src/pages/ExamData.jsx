@@ -117,7 +117,7 @@ const ExamData = () => {
                   </td>
 
                   <td className="text-center text-red-500">
-                    Terminated
+                    -
                   </td>
                 </tr>
               ))}

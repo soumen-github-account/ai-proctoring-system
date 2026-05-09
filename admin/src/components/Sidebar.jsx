@@ -8,7 +8,7 @@ import {
   X
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import logo_img from "../assets/logo.png";
+import logo_img from "../assets/logo2.png";
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navItems = [
@@ -39,7 +39,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <div className="px-4">
         <div className="flex justify-center my-2 mt-5">
-          <img src={logo_img} className="w-28" alt="logo" />
+          <img src={logo_img} className="w-30" alt="logo" />
         </div>
 
         <h1 className="text-center font-medium text-gray-800">Admin</h1>
